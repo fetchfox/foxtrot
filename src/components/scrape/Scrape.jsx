@@ -71,7 +71,6 @@ import { Error } from '../common/Error';
 import { HelpBar } from '../common/HelpBar';
 import { GlobalError } from '../common/GlobalError';
 import { OpenAiKeyEntry } from '../openai/OpenAiKeyEntry';
-import { Pagination } from '../pagination/Pagination';
 import { PerPage } from '../perpage/PerPage';
 import { Share } from '../share/Share';
 import { FoxSays } from '../fox/FoxSays';
@@ -509,6 +508,13 @@ const Inner = ({ isPopup, onNewJob, onShowSettings }) => {
       'new');
   }
 
+  const rerunErrors = async () => {
+    const errorUrls = (job?.results?.targets || [])
+      .filter(r => r.status == 'error')
+      .map(r => r.url);
+    return runScrape(job, errorUrls);
+  }
+
   if (loadingOpenAiKey) {
     return null;
   }
@@ -522,6 +528,7 @@ const Inner = ({ isPopup, onNewJob, onShowSettings }) => {
 
   const currentStep = (job?.results?.targets || []).length == 0 ? 1 : 2;
   const noAnswers = (job?.results?.targets || []).filter(r => !!r.answer).length == 0;
+  const numErrors = (job?.results?.targets || []).filter(r => r.status == 'error').length;
 
   const controlsNode = (
     <div>
@@ -529,24 +536,37 @@ const Inner = ({ isPopup, onNewJob, onShowSettings }) => {
         className="btn btn-gray"
         disabled={currentStep < 2}
         onClick={() => downloadJobCsv(job)}
+        style={{ margin: '5px 5px 0 0' }}
         >
         <FaFileCsv size={12} /> Download CSV
-      </button>{' '}
-      <Share job={job} />{' '}
+      </button>
+      <div style={{ margin: '5px 5px 0 0', display: 'inline-block' }}>
+        <Share job={job} />
+      </div>
       <button
         className="btn btn-gray"
         disabled={currentStep < 2}
         onClick={clearAll}
+        style={{ margin: '5px 5px 0 0' }}
         >
         Clear All Data
-      </button>{' '}
+      </button>
       <button
         className="btn btn-gray"
         disabled={currentStep < 2 || noAnswers}
         onClick={clearScrape}
+        style={{ margin: '5px 5px 0 0' }}
         >
         Clear Answers
       </button>
+      {!!numErrors && <button
+        className="btn btn-gray"
+        disabled={numErrors == 0}
+        onClick={rerunErrors}
+        style={{ margin: '5px 5px 0 0' }}
+        >
+        Rerun {numErrors} {numErrors == 1 ? 'Error' : 'Errors'}
+      </button>}
     </div>
   );
 
@@ -813,7 +833,7 @@ export const Scrape = ({ isPopup }) => {
   }
 
   return (
-    <div style={{ minHeight: 560, color: 'white' }}>
+    <div style={{ minHeight: 560, color: 'white', overflow: 'hidden' }}>
       <HelpBar />
       <GlobalError />
       {/*msg*/}

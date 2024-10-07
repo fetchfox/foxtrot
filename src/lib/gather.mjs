@@ -151,6 +151,7 @@ export const findPagination = async (page) => {
     for (const l of (answer.pageLinks || [])) {
       const expanded = expander(page, l);
       expanded.pageNumber = l.pageNumber;
+      expanded.text = l.pageNumber == 0 ? '(current)' : `(page ${l.pageNumber})`;
       pages.push(expanded);
     }
     pages.sort((a, b) => (parseInt(a.pageNumber) || 99) - (parseInt(b.pageNumber) || 99));

@@ -102,7 +102,9 @@ export const UrlsStep = ({ jobId, isPopup }) => {
   useEffect(() => {
     const update = () => {
       if (step != 'inner') return;
+      console.log('running current URL update');
       getActiveTab().then(async (a) => {
+        console.log('current URL update got active tab URL:', a?.url, 'current:', mirror?.urls?.currentUrl);
         await updateMirror([
           ['urls.url', a.url],
           ['urls.currentUrl', a.url],
@@ -237,8 +239,13 @@ export const UrlsStep = ({ jobId, isPopup }) => {
                     }}>
           {mirror?.urls.currentUrl}
         </div>
-
       </div>
+      <Pagination
+        url={mirror?.urls.currentUrl}
+        onChange={(val) => updateMirror([['urls.pagination', val]])}
+        follow={mirror?.urls.pagination?.follow || false}
+        count={mirror?.urls.pagination?.count || 0}
+      />
 
       {questionNode}
       {perPageNode}

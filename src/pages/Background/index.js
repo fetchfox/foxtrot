@@ -16,6 +16,7 @@ import {
   setScrapeAnswer,
   pushConsole,
 } from '../../lib/store.mjs';
+import { unique } from 'radash';
 import { getPageData, getTabData, getActiveTab, reportSleep } from '../../lib/navigation.mjs';
 import { parseLinks, cleanLinks, dedupeLinks } from '../../lib/gather.mjs';
 import { scrapePage } from '../../lib/scrape.mjs';
@@ -159,9 +160,7 @@ const runJob = async (job, tabId) => {
     if (job.urls.pagination?.follow) {
       const paginationTargets = [];
       for (const link of job.urls.pagination.links) {
-        console.log('look at pagination link', link);
-        const text = link.pageNumber == 0 ? '(current)' : `(page ${link.pageNumber})`;
-        paginationTargets.push({ url: link.url, text });
+        paginationTargets.push({ url: link.url, text: link.text });
       }
       targets = mergeTargets(paginationTargets);
       console.log('pagination gave targets:', targets);
@@ -208,7 +207,7 @@ const runGetName = async (job) => {
   slim.scrape = job.scrape;
   slim.urls = job.urls;
   return exec('name', { job: JSON.stringify(slim, null, 2) })
-    .then(x => x.name);
+    .then(x => x?.name || 'Unnamed');
 };
 
 const runGather = async (job, tabId, percentFactor) => {
@@ -227,8 +226,14 @@ const runGather = async (job, tabId, percentFactor) => {
   }
 
   const urlsList = splitUrls(job.urls.url);
-
+  if (job.urls.pagination?.follow) {
+      for (const link of job.urls.pagination.links) {
+        urlsList.push(link.url);
+      }
+  }
+  urlsList = unique(urlsList);
   console.log('urlsList', urlsList);
+
   let links = [];
   for (let i = 0; i < urlsList.length; i++) {
     const url = urlsList[i];
